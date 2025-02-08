@@ -1,57 +1,33 @@
-// import socketIo from 'socket.io';
+import express from "express";
 import { Server } from "socket.io";
-import http from "http";
-import { RTCPeerConnection, RTCSessionDescription } from "wrtc";
+import { createServer } from "http";
 
-const rtcConfig = {
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }], // Public STUN server
-};
-
-const peerConnections = new Map();
-
+const server = createServer(app);
+const io = new Server(server, {
+    cors: { origin: "*" }
+});
 
 io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
-  
-    socket.on("offer", async (offer) => {
-      console.log(`Received offer from ${socket.id}`);
-  
-      const peerConnection = new RTCPeerConnection(rtcConfig);
-      peerConnections.set(socket.id, peerConnection);
-  
-      // Handle ICE candidates
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket.emit("ice-candidate", event.candidate);
-        }
-      };
-  
-      // Handle incoming video stream
-      peerConnection.ontrack = (event) => {
-        console.log("Received track from client", event.streams.length);
-        io.emit("stream", event.streams[0]); // Relay stream to all clients
-      };
-  
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-  
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-  
-      socket.emit("answer", answer);
+    console.log("Client connected");
+
+    socket.on("offer", (offer) => {
+        console.log("Received offer");
+        socket.broadcast.emit("offer", offer);
     });
-  
-    // Handle ICE candidates
-    socket.on("ice-candidate", (candidate) => {
-      const peerConnection = peerConnections.get(socket.id);
-      if (peerConnection) {
-        peerConnection.addIceCandidate(candidate);
-      }
+
+    socket.on("answer", (answer) => {
+        console.log("Received answer");
+        socket.broadcast.emit("answer", answer);
     });
-  
-    // Clean up on disconnect
+
+    socket.on("candidate", (candidate) => {
+        console.log("Received ICE candidate");
+        socket.broadcast.emit("candidate", candidate);
+    });
+
     socket.on("disconnect", () => {
-      console.log(`Client ${socket.id} disconnected`);
-      peerConnections.get(socket.id)?.close();
-      peerConnections.delete(socket.id);
+        console.log("Client disconnected");
     });
-  });
+});
+
+export default io
