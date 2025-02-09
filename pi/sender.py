@@ -3,8 +3,7 @@ import cv2
 import json
 import socketio
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack
-from aiortc.contrib.media import MediaStreamTrack
-from av import VideoFrame, AudioFrame
+from av import VideoFrame
 import fractions
 import numpy as np
 import pyaudio
@@ -29,8 +28,9 @@ class CustomAudioStreamTrack(AudioStreamTrack):
         audio_data = self.stream.read(960, exception_on_overflow=False)
         audio_array = np.frombuffer(audio_data, dtype=np.int16)
 
-        audio_frame = AudioFrame(format="s16", layout="mono", samples=960)
+        audio_frame = pyaudio.AudioFrame(format="s16", layout="mono", samples=960)
         audio_frame.planes[0].update(audio_array.tobytes())
+        audio_frame.pts = None  # Leave `None` to let aiortc handle timestamps
         audio_frame.sample_rate = self.rate
         return audio_frame
 
@@ -52,26 +52,6 @@ class CustomVideoStreamTrack(VideoStreamTrack):
         video_frame.time_base = fractions.Fraction(1, 30)
         return video_frame
 
-class AudioPlayer:
-    """Plays received audio through speakers."""
-    
-    def __init__(self, rate=22050, channels=1):
-        self.rate = rate
-        self.channels = channels
-        self.p = pyaudio.PyAudio()
-        self.stream = self.p.open(
-            format=pyaudio.paInt16,
-            channels=self.channels,
-            rate=self.rate,
-            output=True,
-            frames_per_buffer=960
-        )
-
-    def play_audio(self, frame: AudioFrame):
-        """Plays received audio frame."""
-        audio_data = frame.planes[0].to_bytes()
-        self.stream.write(audio_data)
-
 async def setup_webrtc():
     pc = RTCPeerConnection()
     video_sender = CustomVideoStreamTrack(0)
@@ -79,26 +59,6 @@ async def setup_webrtc():
     pc.addTrack(video_sender)
     pc.addTrack(audio_sender)
 
-    # Audio player to output received audio
-    audio_player = AudioPlayer()
-
-    @pc.on("track")
-    def on_track(track: MediaStreamTrack):
-        if isinstance(track, AudioStreamTrack):
-            print("Received an audio track")
-
-            async def play_audio():
-                """Continuously receive and play audio."""
-                while True:
-                    try:
-                        frame = await track.recv()  # Receive audio frame
-                        audio_player.play_audio(frame)  # Play the received frame
-                    except Exception as e:
-                        print("Audio playback error:", e)
-                        break
-            
-            asyncio.create_task(play_audio())  # Run in background
-    
     @pc.on("icecandidate")
     async def on_icecandidate(candidate):
         if candidate:
