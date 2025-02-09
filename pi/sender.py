@@ -28,7 +28,7 @@ class CustomAudioStreamTrack(AudioStreamTrack):
         audio_data = self.stream.read(960, exception_on_overflow=False)
         audio_array = np.frombuffer(audio_data, dtype=np.int16)
 
-        audio_frame = AudioFrame(format="s16", layout="mono", samples=960)
+        audio_frame = pyaudio.AudioFrame(format="s16", layout="mono", samples=960)
         audio_frame.planes[0].update(audio_array.tobytes())
         audio_frame.pts = None  # Leave `None` to let aiortc handle timestamps
         audio_frame.sample_rate = self.rate
@@ -75,7 +75,7 @@ async def setup_webrtc():
         await pc.setRemoteDescription(RTCSessionDescription(data["sdp"], data["type"]))
 
 async def main():
-    await sio.connect("http://10.201.23.67:3000")  # Replace with your server IP
+    await sio.connect("http://10.201.23.66:3000")  # Replace with your server IP
     await setup_webrtc()
     await sio.wait()
 
