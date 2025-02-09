@@ -3,7 +3,7 @@ import pyaudio
 import numpy as np
 import struct
 
-IP = "http://localhost:3000"
+IP = "http://10.201.23.66:3000"
 
 # Define audio stream parameters
 sample_rate = 44100  # Sample rate (Hz)

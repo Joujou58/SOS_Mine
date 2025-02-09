@@ -9,7 +9,7 @@ import numpy as np
 import pyaudio
 import time
 
-IP = "http://localhost:3000"
+IP = "http://10.201.23.66:3000"
 
 bufferSize = 512
 audioHz = 16000
