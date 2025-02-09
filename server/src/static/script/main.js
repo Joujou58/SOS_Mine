@@ -5,6 +5,9 @@ const videoElement = document.getElementById("remoteVideo");
 const remoteStream = new MediaStream();  // Store both audio and video tracks
 videoElement.srcObject = remoteStream;
 
+
+let microIsMuted = false;
+
 const peerConnection = new RTCPeerConnection({
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
 });
@@ -44,3 +47,24 @@ socket.on("candidate", async (candidate) => {
     console.log("Received ICE candidate");
     await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
 });
+
+initalizeMuteButton();
+
+
+
+function initalizeMuteButton() {
+    const audioButton = document.getElementById("mute-button");
+
+    audioButton.addEventListener('click', () => {
+        if(!microIsMuted) {
+            audioButton.classList.remove('mic-on');
+            audioButton.classList.add('mic-off');
+            microIsMuted = true;
+        }
+        else {
+            audioButton.classList.remove('mic-off');
+            audioButton.classList.add('mic-on');
+            microIsMuted = false;
+        }
+    });
+}

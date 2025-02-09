@@ -1,5 +1,26 @@
+:root {
+    /* color-scheme: dark; */
+    --bg-color: rgb(82, 92, 88);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+html, body {
+    min-height: 100vh;
+    height: auto;
+    width: 100vw;
+    background: var(--bg-color);
+    overflow-y: auto;
+}
+
+
 body {
-    background-color: rgb(82, 92, 88);
+    background-color: var(--bg-color);
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
@@ -26,5 +47,24 @@ main {
     height: auto;
     border: 2px solid #333;
     border-radius: 8px;
+}
+
+#mute-button {
+    background-size: 100%;
+    background-repeat: no-repeat;
+
+
+    background-color: var(--bg-color);
+    border: none;
+    width: 100px;
+    height: 100px;
+}
+
+.mic-on {
+    background-image: url(/images/mic-on.svg);
+}
+
+.mic-off {
+    background-image: url(/images/mic-off.svg);
 }
 
