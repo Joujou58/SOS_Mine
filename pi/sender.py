@@ -3,17 +3,21 @@ import cv2
 # import json
 import socketio
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack
-from av import VideoFrame
+from av import VideoFrame, AudioFrame
 import fractions
 import numpy as np
 import pyaudio
+import time
 
 print("allo")
+
+bufferSize = 960
+audioHz = 44100
 
 sio = socketio.AsyncClient()  # Socket.IO Client
 
 class CustomAudioStreamTrack(AudioStreamTrack):
-    def __init__(self, rate=22050, channels=1):
+    def __init__(self, rate=audioHz, channels=1):
         super().__init__()
         self.rate = rate
         self.channels = channels
@@ -23,16 +27,25 @@ class CustomAudioStreamTrack(AudioStreamTrack):
             channels=self.channels,
             rate=self.rate,
             input=True,
-            frames_per_buffer=960
+            frames_per_buffer=bufferSize,
         )
 
     async def recv(self):
-        audio_data = self.stream.read(960, exception_on_overflow=False)
+        samples = int(0.020 * audioHz)
+
+        if hasattr(self, "_timestamp"):
+            self._timestamp += samples
+            wait = self._start + (self._timestamp / audioHz) - time.time()
+            await asyncio.sleep(wait)
+        else:
+            self._start = time.time()
+            self._timestamp = 0
+        audio_data = self.stream.read(bufferSize, exception_on_overflow=False)
         audio_array = np.frombuffer(audio_data, dtype=np.int16)
 
-        audio_frame = AudioFrame(format="s16", layout="mono", samples=960)
+        audio_frame = AudioFrame(format="s16", layout="mono", samples=bufferSize)
         audio_frame.planes[0].update(audio_array.tobytes())
-        audio_frame.pts = None  # Leave `None` to let aiortc handle timestamps
+        audio_frame.pts = self._timestamp # Leave `None` to let aiortc handle timestamps
         audio_frame.sample_rate = self.rate
         return audio_frame
 
@@ -57,7 +70,9 @@ class CustomVideoStreamTrack(VideoStreamTrack):
 async def setup_webrtc():
     pc = RTCPeerConnection()
     video_sender = CustomVideoStreamTrack(0)
+    audio = CustomAudioStreamTrack()
     pc.addTrack(video_sender)
+    pc.addTrack(audio)
 
     @pc.on("icecandidate")
     async def on_icecandidate(candidate):
@@ -76,7 +91,7 @@ async def setup_webrtc():
 
 async def main():
     print("allo")
-    await sio.connect("http://10.201.23.66:3000")  # Replace with your server IP
+    await sio.connect("http://localhost:3000")  # Replace with your server IP
     print("allo")
     await setup_webrtc()
     await sio.wait()

@@ -12,6 +12,16 @@ OUTPUT_FILENAME = "output.wav"
 
 p = pyaudio.PyAudio()
 
+count = p.get_device_count()
+
+for i in range(count):
+    device_info = p.get_device_info_by_index(i)
+    print(f"Device {i}: {device_info['name']} (input: {device_info['maxInputChannels']} channels, output: {device_info['maxOutputChannels']} channels)")
+
+print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+print(p.get_default_input_device_info())
+
+
 stream = p.open(format=FORMAT, 
                 channels=CHANNELS,
                 rate=RATE,
