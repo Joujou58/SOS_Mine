@@ -68,3 +68,50 @@ function initalizeMuteButton() {
         }
     });
 }
+
+async function startRecording() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioContext = new AudioContext();
+    await audioContext.audioWorklet.addModule("script/processor.js");
+
+    const source = audioContext.createMediaStreamSource(stream);
+    const processorNode = new AudioWorkletNode(audioContext, "audio-processor");
+
+    // Create an analyser node to calculate the amplitude of the audio signal
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;  // Set FFT size for analysis (you can adjust this)
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    source.connect(analyser);
+    analyser.connect(processorNode);
+
+    const ws = new WebSocket("ws://localhost:3000/webtopi");
+
+    ws.onopen = () => console.log("WebToPi WebSocket connected");
+    ws.onclose = () => console.log("WebToPi WebSocket CLOSED");
+
+    const threshold = 20; // Minimum amplitude threshold (adjust as needed)
+
+    processorNode.port.onmessage = (event) => {
+        analyser.getByteFrequencyData(dataArray);  // Get frequency data
+
+        // Calculate the RMS (Root Mean Square) of the frequency data to get the volume level
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i] ** 2;
+        }
+
+        const rms = Math.sqrt(sum / bufferLength);  // RMS calculation
+        if (rms > threshold && ws.readyState === WebSocket.OPEN) {
+            ws.send(event.data); // Send audio data if volume exceeds threshold
+        }
+    };
+
+    source.connect(processorNode); // Connect the source to the processor node
+}
+
+
+
+
+(async function() {await startRecording()})();

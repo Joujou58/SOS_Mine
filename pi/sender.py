@@ -28,7 +28,7 @@ class CustomAudioStreamTrack(AudioStreamTrack):
             rate=self.rate,
             input=True,
             frames_per_buffer=bufferSize,
-            input_device_index=2
+            input_device_index=1
         )
 
     async def recv(self):
@@ -92,7 +92,7 @@ async def setup_webrtc():
 
 async def main():
     print("allo")
-    await sio.connect("http://10.201.23.66:3000")  # Replace with your server IP
+    await sio.connect("http://localhost:3000")  # Replace with your server IP
     print("allo")
     await setup_webrtc()
     await sio.wait()
