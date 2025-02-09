@@ -11,7 +11,7 @@ import pyaudio
 sio = socketio.AsyncClient()  # Socket.IO Client
 
 class CustomAudioStreamTrack(AudioStreamTrack):
-    def __init__(self, rate=22050, channels=1):
+    def __init__(self, rate=16000, channels=1):
         super().__init__()
         self.rate = rate
         self.channels = channels
@@ -21,7 +21,8 @@ class CustomAudioStreamTrack(AudioStreamTrack):
             channels=self.channels,
             rate=self.rate,
             input=True,
-            frames_per_buffer=960
+            frames_per_buffer=960,
+            input_device_index=2
         )
 
     async def recv(self):
@@ -54,7 +55,7 @@ class CustomVideoStreamTrack(VideoStreamTrack):
 
 async def setup_webrtc():
     pc = RTCPeerConnection()
-    video_sender = CustomVideoStreamTrack(0)
+    video_sender = CustomVideoStreamTrack(1)
     audio_sender = CustomAudioStreamTrack()
     pc.addTrack(video_sender)
     pc.addTrack(audio_sender)
@@ -75,7 +76,7 @@ async def setup_webrtc():
         await pc.setRemoteDescription(RTCSessionDescription(data["sdp"], data["type"]))
 
 async def main():
-    await sio.connect("http://10.201.23.67:3000")  # Replace with your server IP
+    await sio.connect("http://10.201.23.66:3000")  # Replace with your server IP
     await setup_webrtc()
     await sio.wait()
 
