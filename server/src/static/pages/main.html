@@ -8,22 +8,35 @@
         <link rel="shortcut icon" href="/favicon.ico">
     </head>
     <body>
-        <header>
-            <h1>SOS Mine</h1>
-        </header>
-        <main>
-            <section id="video-stream">
-                <h2>Live Stream</h2>
-                <video id="remoteVideo" controls autoplay>
-                    <source type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </section>
-            <div>
-                <button id="mute-button" class="mic-on">
-                </button>
+        <div id="clock" class="clock"></div>
+        <div class="camera-feed">
+            <video id="remoteVideo" controls autoplay>
+                <source type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div class="sidebar">
+            <div class="connections">
+                <div class="connection"><div class="dot"></div> Operator 1</div>
             </div>
-        </main>
+            <button id="mute-button" class="mute-button mic-on"></button>
+            
+        </div>
+        <script>
+            function updateClock() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                document.getElementById('clock').innerHTML = `VW-SF138<br>${year}/${month}/${day}  ${hours}:${minutes}:${seconds}`;
+            }
+
+            updateClock();
+            setInterval(updateClock, 1000);
+        </script>
         <script type="module" src="/script/main.js"></script>
     </body>
 </html>
