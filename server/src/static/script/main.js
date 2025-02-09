@@ -60,55 +60,48 @@ function initalizeMuteButton() {
             audioButton.classList.remove('mic-on');
             audioButton.classList.add('mic-off');
             microIsMuted = true;
+            window.muted = true;
         }
         else {
             audioButton.classList.remove('mic-off');
             audioButton.classList.add('mic-on');
             microIsMuted = false;
+            window.muted = false;
         }
     });
 }
 
 async function startRecording() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const audioContext = new AudioContext();
-    await audioContext.audioWorklet.addModule("script/processor.js");
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const ws = new WebSocket('ws://localhost:3000/webtopi');
 
-    const source = audioContext.createMediaStreamSource(stream);
-    const processorNode = new AudioWorkletNode(audioContext, "audio-processor");
+    // Capture microphone input
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then((stream) => {
+            const source = audioContext.createMediaStreamSource(stream);
+            const processor = audioContext.createScriptProcessor(2048, 1, 1);
 
-    // Create an analyser node to calculate the amplitude of the audio signal
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 256;  // Set FFT size for analysis (you can adjust this)
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
+            source.connect(processor);
+            processor.connect(audioContext.destination);
 
-    source.connect(analyser);
-    analyser.connect(processorNode);
+            processor.onaudioprocess = function (event) {
+                const inputBuffer = event.inputBuffer;
+                const outputBuffer = new Float32Array(inputBuffer.length);
 
-    const ws = new WebSocket("ws://localhost:3000/webtopi");
+                // Convert audio data to PCM format (16-bit signed)
+                const pcmData = new Int16Array(inputBuffer.length);
+                for (let i = 0; i < inputBuffer.length; i++) {
+                    pcmData[i] = Math.max(-1, Math.min(1, inputBuffer.getChannelData(0)[i])) * 0x7FFF;
+                }
 
-    ws.onopen = () => console.log("WebToPi WebSocket connected");
-    ws.onclose = () => console.log("WebToPi WebSocket CLOSED");
+                // Send audio data as raw PCM via WebSocket
+                if (ws.readyState === WebSocket.OPEN && window.muted !== true) {
+                    ws.send(pcmData.buffer);
+                }
+            };
+        })
+        .catch((err) => console.error("Failed to get user media: ", err));
 
-    const threshold = 20; // Minimum amplitude threshold (adjust as needed)
-
-    processorNode.port.onmessage = (event) => {
-        analyser.getByteFrequencyData(dataArray);  // Get frequency data
-
-        // Calculate the RMS (Root Mean Square) of the frequency data to get the volume level
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-            sum += dataArray[i] ** 2;
-        }
-
-        const rms = Math.sqrt(sum / bufferLength);  // RMS calculation
-        if (rms > threshold && ws.readyState === WebSocket.OPEN) {
-            ws.send(event.data); // Send audio data if volume exceeds threshold
-        }
-    };
-
-    source.connect(processorNode); // Connect the source to the processor node
 }
 
 
