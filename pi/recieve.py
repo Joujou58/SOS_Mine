@@ -3,6 +3,8 @@ import pyaudio
 import numpy as np
 import struct
 
+IP = "http://localhost:3000"
+
 # Define audio stream parameters
 sample_rate = 44100  # Sample rate (Hz)
 channels = 1  # Mono audio
@@ -40,7 +42,7 @@ def on_open(ws):
 
 def main():
     # Establish WebSocket connection to the server
-    ws = websocket.WebSocketApp("ws://localhost:3000/listen",  # WebSocket server URL
+    ws = websocket.WebSocketApp(f"{IP}/listen",  # WebSocket server URL
                                 on_message=on_message,
                                 on_error=on_error,
                                 on_close=on_close)

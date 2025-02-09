@@ -9,7 +9,7 @@ import numpy as np
 import pyaudio
 import time
 
-print("allo")
+IP = "http://localhost:3000"
 
 bufferSize = 512
 audioHz = 16000
@@ -91,9 +91,7 @@ async def setup_webrtc():
         await pc.setRemoteDescription(RTCSessionDescription(data["sdp"], data["type"]))
 
 async def main():
-    print("allo")
-    await sio.connect("http://localhost:3000")  # Replace with your server IP
-    print("allo")
+    await sio.connect(IP)  # Replace with your server IP
     await setup_webrtc()
     await sio.wait()
 
