@@ -1,6 +1,6 @@
 import asyncio
 import cv2
-import json
+# import json
 import socketio
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack
 from av import VideoFrame
@@ -8,10 +8,12 @@ import fractions
 import numpy as np
 import pyaudio
 
+print("allo")
+
 sio = socketio.AsyncClient()  # Socket.IO Client
 
 class CustomAudioStreamTrack(AudioStreamTrack):
-    def __init__(self, rate=16000, channels=1):
+    def __init__(self, rate=22050, channels=1):
         super().__init__()
         self.rate = rate
         self.channels = channels
@@ -21,8 +23,7 @@ class CustomAudioStreamTrack(AudioStreamTrack):
             channels=self.channels,
             rate=self.rate,
             input=True,
-            frames_per_buffer=960,
-            input_device_index=2
+            frames_per_buffer=960
         )
 
     async def recv(self):
@@ -55,10 +56,8 @@ class CustomVideoStreamTrack(VideoStreamTrack):
 
 async def setup_webrtc():
     pc = RTCPeerConnection()
-    video_sender = CustomVideoStreamTrack(1)
-    audio_sender = CustomAudioStreamTrack()
+    video_sender = CustomVideoStreamTrack(0)
     pc.addTrack(video_sender)
-    pc.addTrack(audio_sender)
 
     @pc.on("icecandidate")
     async def on_icecandidate(candidate):
@@ -76,7 +75,9 @@ async def setup_webrtc():
         await pc.setRemoteDescription(RTCSessionDescription(data["sdp"], data["type"]))
 
 async def main():
+    print("allo")
     await sio.connect("http://10.201.23.66:3000")  # Replace with your server IP
+    print("allo")
     await setup_webrtc()
     await sio.wait()
 
