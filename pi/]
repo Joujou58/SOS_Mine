@@ -11,7 +11,7 @@ import time
 
 print("allo")
 
-bufferSize = 512
+bufferSize = 960
 audioHz = 16000
 
 sio = socketio.AsyncClient()  # Socket.IO Client
@@ -32,7 +32,7 @@ class CustomAudioStreamTrack(AudioStreamTrack):
         )
 
     async def recv(self):
-        samples = int(bufferSize)
+        samples = int(0.020 * audioHz)
 
         if hasattr(self, "_timestamp"):
             self._timestamp += samples
