@@ -68,3 +68,30 @@ function initalizeMuteButton() {
         }
     });
 }
+
+function getLocalAudioStream() {
+    navigator.mediaDevices
+        .getUserMedia({ video: false, audio: true })
+        .then((stream) => {
+            // window.localStream = stream;
+            // window.localAudio.srcObject = stream;
+            // window.localAudio.autoplay = true;
+
+            window.localStream = stream;
+
+            stream.getAudioTracks().forEach(track => {
+                peerConnection.addTrack(track, stream);
+            });
+
+            // Play the local audio to confirm it's working
+            // const localAudio = document.createElement("audio");
+            // localAudio.srcObject = stream;
+            // localAudio.autoplay = true;
+            // document.body.appendChild(localAudio);
+    })
+    .catch((err) => {
+        console.error(`you got an error: ${err}`);
+    });
+}
+
+getLocalAudioStream();
